@@ -36,7 +36,7 @@ func _ready():
 		play_games_services.connect("_on_player_info_loaded", self, "_on_player_info_loaded")
 		play_games_services.connect("_on_player_info_loading_failed", self, "_on_player_info_loading_failed")
 	
-		play_games_services.init(true)
+		play_games_services.init(true,false,false,"")
 #		play_games_services.initWithSavedGames(true, "SAVE_GAME_NAME") # Use this init if you want saved games feature to be enabled
 
 
@@ -127,8 +127,9 @@ func load_player_info() -> void:
 
 # CALLBACKS
 # Sign-in / sign-out callbacks
-func _on_sign_in_success(account_id: String) -> void:
-	print("Sign in success %s"%account_id)
+func _on_sign_in_success(userProfile_json: String) -> void:
+	var userProfile = parse_json(userProfile_json)
+	print("Sign in success ",userProfile)
 
 func _on_sign_in_failed(error_code: int) -> void:
 	print("Sign in failed %s"%error_code)

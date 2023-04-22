@@ -2,6 +2,7 @@ package io.cgisca.godot.gpgs.signin
 
 import android.app.Activity
 import android.util.Pair
+import android.util.Log
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInResult
@@ -25,22 +26,30 @@ class SignInController(
     }
 
     fun signIn(googleSignInClient: GoogleSignInClient) {
-        val connection: Pair<Boolean, String> = connectionController.isConnected()
+        val userProfile = UserProfile(null, null, null, null, null)
+        val connection: Pair<Boolean, UserProfile> = connectionController.isConnected()
         if (connection.first) {
+            Log.i("godot","Using cached signin data")
             signInListener.onSignedInSuccessfully(connection.second)
             enablePopUps()
         } else {
+            Log.i("godot","Using new signin data")
             googleSignInClient
                 .silentSignIn()
                 .addOnCompleteListener(activity) { task ->
                     if (task.isSuccessful) {
                         val googleSignInAccount = task.result
-                        var accId = ""
-                        googleSignInAccount?.id?.let {
-                            accId = it
+                        if (googleSignInAccount != null) {
+                            userProfile.let {
+                                it.displayName = googleSignInAccount.displayName
+                                it.email = googleSignInAccount.email
+                                it.token = googleSignInAccount.idToken
+                                it.authCode = googleSignInAccount.serverAuthCode
+                                it.id = googleSignInAccount.id
+                            }
                         }
 
-                        signInListener.onSignedInSuccessfully(accId)
+                        signInListener.onSignedInSuccessfully(userProfile)
                         enablePopUps()
                     } else {
                         val intent = googleSignInClient.signInIntent
@@ -51,14 +60,20 @@ class SignInController(
     }
 
     fun onSignInActivityResult(googleSignInResult: GoogleSignInResult?) {
+        val userProfile = UserProfile(null, null, null, null, null)
         if (googleSignInResult != null && googleSignInResult.isSuccess) {
             val googleSignInAccount = googleSignInResult.signInAccount
-            var accId = ""
-            googleSignInAccount?.id?.let {
-                accId = it
+            if (googleSignInAccount != null) {
+                userProfile.let {
+                    it.displayName = googleSignInAccount.displayName
+                    it.email = googleSignInAccount.email
+                    it.token = googleSignInAccount.idToken
+                    it.authCode = googleSignInAccount.serverAuthCode
+                    it.id = googleSignInAccount.id
+                }
             }
             enablePopUps()
-            signInListener.onSignedInSuccessfully(accId)
+            signInListener.onSignedInSuccessfully(userProfile)
         } else {
             var statusCode = Int.MIN_VALUE
             googleSignInResult?.status?.let {
